@@ -14,7 +14,7 @@ type Question struct {
 }
 
 func ParseQuestion(data []byte, offset int) (Question, int, error) {
-	name, offset, err := parseName(data, offset)
+	name, offset, err := ParseName(data, offset)
 	if err != nil {
 		return Question{}, 0, err
 	}
@@ -41,7 +41,7 @@ func (q *Question) Bytes() []byte {
 }
 
 // Update parseName function to handle invalid labels
-func parseName(data []byte, offset int) (string, int, error) {
+func ParseName(data []byte, offset int) (string, int, error) {
 	var name bytes.Buffer
 	initialOffset := offset
 	maxJumps := 5
@@ -69,7 +69,7 @@ func parseName(data []byte, offset int) (string, int, error) {
 			ptrOffset := int(binary.BigEndian.Uint16([]byte{byte(length & 0x3F), data[offset]}))
 			offset++
 
-			part, _, err := parseName(data, ptrOffset)
+			part, _, err := ParseName(data, ptrOffset)
 			if err != nil {
 				return "", initialOffset, err
 			}
