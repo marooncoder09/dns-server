@@ -110,3 +110,19 @@ func writeName(buf *bytes.Buffer, name string) {
 func splitName(name string) []string {
 	return strings.Split(name, ".")
 }
+
+func ParseQuestions(data []byte, count uint16) []Question {
+	var questions []Question
+	offset := HeaderSize
+
+	for i := 0; i < int(count); i++ {
+		q, newOffset, err := ParseQuestion(data, offset)
+		if err != nil {
+			break
+		}
+		questions = append(questions, q)
+		offset = newOffset
+	}
+
+	return questions
+}
