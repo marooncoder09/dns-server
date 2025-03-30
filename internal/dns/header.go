@@ -5,6 +5,11 @@ import (
 	"fmt"
 )
 
+const (
+	HeaderSize = 12
+	QRResponse = 1 << 7 // (10000000): [here we are setting the 8th bit to 1 by left shifting 1 by 7 positions]
+)
+
 type Header struct {
 	ID uint16 // this helps match requests with responses
 
