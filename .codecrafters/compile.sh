@@ -8,4 +8,4 @@
 
 set -e # Exit on failure
 
-go build -o /tmp/codecrafters-build-dns-server-go app/*.go
+go build -o /tmp/codecrafters-build-dns-server-go ./cmd/dnsserver/*.go
