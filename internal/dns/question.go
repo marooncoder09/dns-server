@@ -40,14 +40,16 @@ func (q *Question) Bytes() []byte {
 	return buf.Bytes()
 }
 
+// Update parseName function to handle invalid labels
 func parseName(data []byte, offset int) (string, int, error) {
 	var name bytes.Buffer
 	initialOffset := offset
-	ptrSeen := false
+	maxJumps := 5
+	jumps := 0
 
 	for {
 		if offset >= len(data) {
-			return "", 0, errors.New("invalid name: offset out of bounds")
+			return "", initialOffset, errors.New("invalid name: offset out of bounds")
 		}
 
 		length := int(data[offset])
@@ -57,14 +59,16 @@ func parseName(data []byte, offset int) (string, int, error) {
 			break
 		}
 
-		// checking if this is a pointer (compression)
+		// Handle pointers (compression)
 		if length&0xC0 == 0xC0 {
-			if !ptrSeen {
-				ptrSeen = true
-				initialOffset = offset + 1 // saving where the pointer ends
+			if jumps >= maxJumps {
+				return "", initialOffset, errors.New("too many jumps")
 			}
+			jumps++
+
 			ptrOffset := int(binary.BigEndian.Uint16([]byte{byte(length & 0x3F), data[offset]}))
 			offset++
+
 			part, _, err := parseName(data, ptrOffset)
 			if err != nil {
 				return "", initialOffset, err
@@ -73,8 +77,13 @@ func parseName(data []byte, offset int) (string, int, error) {
 			break
 		}
 
-		if offset+length > len(data) {
+		// Validate label length
+		if length > 63 {
 			return "", initialOffset, errors.New("invalid label length")
+		}
+
+		if offset+length > len(data) {
+			return "", initialOffset, errors.New("invalid name: label exceeds buffer")
 		}
 
 		name.Write(data[offset : offset+length])
@@ -82,7 +91,6 @@ func parseName(data []byte, offset int) (string, int, error) {
 		offset += length
 	}
 
-	// removing the trailing dot if present (so that we can use it as a delimiter)
 	strName := name.String()
 	if len(strName) > 0 && strName[len(strName)-1] == '.' {
 		strName = strName[:len(strName)-1]

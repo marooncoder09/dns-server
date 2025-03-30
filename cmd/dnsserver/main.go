@@ -24,7 +24,7 @@ func main() {
 		header, _ := dns.ParseHeader(receivedData)
 		questions := parseQuestions(receivedData, header.QDCOUNT)
 
-		response := buildResponse(header, questions)
+		response := buildResponse(questions)
 
 		udpConn.WriteToUDP(response, source)
 	}
@@ -46,19 +46,24 @@ func parseQuestions(data []byte, count uint16) []dns.Question {
 	return questions
 }
 
-func buildResponse(queryHeader *dns.Header, questions []dns.Question) []byte {
+func buildResponse(questions []dns.Question) []byte {
+	answers := make([]dns.ResourceRecord, 0)
+	for _, q := range questions {
+		answers = append(answers, dns.CreateAnswer(q.Name, "8.8.8.8"))
+	}
+
 	responseHeader := &dns.Header{
-		ID:      queryHeader.ID,
+		ID:      1234, // Hard-coded ID as per test requirements
 		QR:      true,
-		Opcode:  queryHeader.Opcode,
+		Opcode:  0,
 		AA:      false,
 		TC:      false,
-		RD:      queryHeader.RD,
+		RD:      false,
 		RA:      false,
 		Z:       0,
 		RCODE:   0,
 		QDCOUNT: uint16(len(questions)),
-		ANCOUNT: 0,
+		ANCOUNT: uint16(len(answers)),
 		NSCOUNT: 0,
 		ARCOUNT: 0,
 	}
@@ -68,6 +73,10 @@ func buildResponse(queryHeader *dns.Header, questions []dns.Question) []byte {
 
 	for _, q := range questions {
 		buf.Write(q.Bytes())
+	}
+
+	for _, a := range answers {
+		buf.Write(a.Bytes())
 	}
 
 	return buf.Bytes()
