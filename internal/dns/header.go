@@ -68,8 +68,13 @@ func ParseHeader(data []byte) (*Header, error) {
 		return nil, fmt.Errorf("header too short")
 	}
 
-	h := &Header{}
-	h.ID = binary.BigEndian.Uint16(data[0:2])
+	h := &Header{
+		ID:      binary.BigEndian.Uint16(data[0:2]),
+		QDCOUNT: binary.BigEndian.Uint16(data[4:6]),
+		ANCOUNT: binary.BigEndian.Uint16(data[6:8]),
+		NSCOUNT: binary.BigEndian.Uint16(data[8:10]),
+		ARCOUNT: binary.BigEndian.Uint16(data[10:12]),
+	}
 
 	flags1 := data[2]
 	flags2 := data[3]
@@ -83,11 +88,6 @@ func ParseHeader(data []byte) (*Header, error) {
 	h.RA = (flags2>>7)&1 == 1
 	h.Z = (flags2 >> 4) & 0x07
 	h.RCODE = flags2 & 0x0F
-
-	h.QDCOUNT = binary.BigEndian.Uint16(data[4:6])
-	h.ANCOUNT = binary.BigEndian.Uint16(data[6:8])
-	h.NSCOUNT = binary.BigEndian.Uint16(data[8:10])
-	h.ARCOUNT = binary.BigEndian.Uint16(data[10:12])
 
 	return h, nil
 }
